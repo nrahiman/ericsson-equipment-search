@@ -57,14 +57,3 @@ else:
                     st.markdown(f"**{meta['filename']}**")
                     st.write(doc)
                 st.markdown("---")
-```
-
----
-
-### **FILE 2: requirements.txt**
-
-**Create a new text file, paste this, save as `requirements.txt`:**
-```
-streamlit
-requests
-chromadb==0.4.22
