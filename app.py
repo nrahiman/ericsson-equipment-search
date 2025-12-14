@@ -19,6 +19,25 @@ def get_embedding(text):
     headers = {"api-key": API_KEY, "Content-Type": "application/json"}
     return requests.post(url, headers=headers, json={"input": text}).json()["data"][0]["embedding"]
 
+def find_image_file(filename):
+    """Find image file even with (1) suffix"""
+    if os.path.exists(filename):
+        return filename
+    
+    base_name = os.path.splitext(filename)[0]
+    ext = os.path.splitext(filename)[1]
+    
+    variations = [
+        f"{base_name} (1){ext}",
+        f"{base_name} (2){ext}",
+        filename
+    ]
+    
+    for var in variations:
+        if os.path.exists(var):
+            return var
+    return None
+
 if 'initialized' not in st.session_state:
     st.session_state.initialized = False
 
@@ -39,12 +58,6 @@ if not st.session_state.initialized:
             st.rerun()
 else:
     st.success("✅ Ready")
-    
-    with st.expander("🔍 Debug Info - Available Files"):
-        st.write("Files in current directory:")
-        files = [f for f in os.listdir('.') if f.endswith(('.jpg', '.png'))]
-        st.write(files)
-    
     query = st.text_input("🔍 Search:", placeholder="radio equipment")
     num_results = st.slider("Results:", 1, 5, 3)
     
@@ -61,12 +74,11 @@ else:
                 col1, col2 = st.columns([1, 3])
                 
                 with col1:
-                    img_path = item['filename']
-                    if os.path.exists(img_path):
+                    img_path = find_image_file(item['filename'])
+                    if img_path:
                         st.image(img_path, use_container_width=True)
                     else:
-                        st.error(f"File not found: {img_path}")
-                        st.write(f"Looking for: {os.path.abspath(img_path)}")
+                        st.info("📷 Image")
                 
                 with col2:
                     st.markdown(f"**{item['filename']}**")
