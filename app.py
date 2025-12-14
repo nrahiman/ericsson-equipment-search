@@ -1,8 +1,9 @@
 import streamlit as st
 import requests
-import chromadb
 import pickle
 import os
+import numpy as np
+import faiss
 
 st.set_page_config(page_title="Ericsson Equipment Search", page_icon="📡", layout="wide")
 
@@ -26,15 +27,13 @@ if not st.session_state.initialized:
         with st.spinner("Loading..."):
             with open("ericsson_image_data.pkl", "rb") as f:
                 data = pickle.load(f)
-            chroma = chromadb.Client()
-            try:
-                chroma.delete_collection("demo")
-            except:
-                pass
-            col = chroma.create_collection("demo")
-            for i, item in enumerate(data):
-                col.add(embeddings=[item["embedding"]], documents=[item["description"]], metadatas=[{"filename": item["filename"]}], ids=[f"img_{i}"])
-            st.session_state.collection = col
+            
+            embeddings = np.array([item["embedding"] for item in data]).astype('float32')
+            index = faiss.IndexFlatL2(1536)
+            index.add(embeddings)
+            
+            st.session_state.index = index
+            st.session_state.data = data
             st.session_state.initialized = True
             st.success(f"✅ Loaded {len(data)} images!")
             st.rerun()
@@ -42,18 +41,22 @@ else:
     st.success("✅ Ready")
     query = st.text_input("🔍 Search:", placeholder="radio equipment")
     num_results = st.slider("Results:", 1, 5, 3)
+    
     if st.button("Search") and query:
         with st.spinner("Searching..."):
-            qemb = get_embedding(query)
-            results = st.session_state.collection.query(query_embeddings=[qemb], n_results=num_results)
+            qemb = np.array([get_embedding(query)]).astype('float32')
+            distances, indices = st.session_state.index.search(qemb, num_results)
+            
             st.markdown("---")
             st.markdown(f"### Results: *{query}*")
-            for i, (doc, meta) in enumerate(zip(results['documents'][0], results['metadatas'][0])):
+            
+            for idx in indices[0]:
+                item = st.session_state.data[idx]
                 col1, col2 = st.columns([1, 3])
                 with col1:
-                    if os.path.exists(meta['filename']):
-                        st.image(meta['filename'], use_container_width=True)
+                    if os.path.exists(item['filename']):
+                        st.image(item['filename'], use_container_width=True)
                 with col2:
-                    st.markdown(f"**{meta['filename']}**")
-                    st.write(doc)
+                    st.markdown(f"**{item['filename']}**")
+                    st.write(item['description'])
                 st.markdown("---")
