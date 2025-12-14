@@ -39,6 +39,12 @@ if not st.session_state.initialized:
             st.rerun()
 else:
     st.success("✅ Ready")
+    
+    with st.expander("🔍 Debug Info - Available Files"):
+        st.write("Files in current directory:")
+        files = [f for f in os.listdir('.') if f.endswith(('.jpg', '.png'))]
+        st.write(files)
+    
     query = st.text_input("🔍 Search:", placeholder="radio equipment")
     num_results = st.slider("Results:", 1, 5, 3)
     
@@ -53,11 +59,15 @@ else:
             for idx in indices[0]:
                 item = st.session_state.data[idx]
                 col1, col2 = st.columns([1, 3])
+                
                 with col1:
-                    try:
-                        st.image(item['filename'], use_container_width=True)
-                    except:
-                        st.info("📷 Image")
+                    img_path = item['filename']
+                    if os.path.exists(img_path):
+                        st.image(img_path, use_container_width=True)
+                    else:
+                        st.error(f"File not found: {img_path}")
+                        st.write(f"Looking for: {os.path.abspath(img_path)}")
+                
                 with col2:
                     st.markdown(f"**{item['filename']}**")
                     st.write(item['description'])
