@@ -50,13 +50,16 @@ else:
             st.markdown("---")
             st.markdown(f"### Results: *{query}*")
             
-            for idx in indices[0]:
-                item = st.session_state.data[idx]
-                col1, col2 = st.columns([1, 3])
-                with col1:
-                    if os.path.exists(item['filename']):
-                        st.image(item['filename'], use_container_width=True)
-                with col2:
-                    st.markdown(f"**{item['filename']}**")
-                    st.write(item['description'])
-                st.markdown("---")
+            ffor idx in indices[0]:
+    item = st.session_state.data[idx]
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        try:
+            st.image(item['filename'], use_container_width=True)
+        except:
+            st.info("📷 Image file")
+    with col2:
+        st.markdown(f"**{item['filename']}**")
+        st.write(item['description'])
+    st.markdown("---")
+
